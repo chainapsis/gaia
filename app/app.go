@@ -183,6 +183,8 @@ type GaiaApp struct { // nolint: golint
 	ScopedIBCKeeper      capabilitykeeper.ScopedKeeper
 	ScopedTransferKeeper capabilitykeeper.ScopedKeeper
 
+	SimpleMetrics *SimpleMetrics
+
 	// the module manager
 	mm *module.Manager
 
@@ -233,6 +235,8 @@ func NewGaiaApp(
 		tkeys:             tkeys,
 		memKeys:           memKeys,
 	}
+
+	app.SimpleMetrics = NewSimpleMetrics()
 
 	app.ParamsKeeper = initParamsKeeper(appCodec, legacyAmino, keys[paramstypes.StoreKey], tkeys[paramstypes.TStoreKey])
 	// set the BaseApp's parameter store
