@@ -32,17 +32,18 @@ func (app *GaiaApp) Query(req abci.RequestQuery) (res abci.ResponseQuery) {
 		}
 	}
 
-	// Only measure the grpc request.
+	path := req.Path
+
 	// Custom request is hard to measure because it has the parameter datas in the path.
 	if strings.HasPrefix(req.Path, "custom") || strings.HasPrefix(req.Path, "/custom") {
-		return app.BaseApp.Query(req)
+		path = GuessParametersFromPath(req.Path)
 	}
 
 	start := time.Now()
 	res = app.BaseApp.Query(req)
 	elapsed := time.Since(start)
 
-	app.SimpleMetrics.Measure(req.Path, elapsed)
+	app.SimpleMetrics.Measure(path, elapsed)
 
 	return res
 }

@@ -1,9 +1,69 @@
 package gaia
 
 import (
+	"encoding/hex"
 	"math"
+	"strconv"
+	"strings"
 	"time"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
+
+func GuessParametersFromPath(path string)string {
+	config := sdk.GetConfig()
+	// It is not possible to perfectly select parameters from the path. guess and pick some.
+	split := strings.Split(path, "/")
+	for i := range split {
+		frag := split[i]
+
+		if len(frag) == 0 {
+			continue
+		}
+
+		canBech32 := strings.Index(frag, "1")
+		if canBech32 >= 0 {
+			prefix := frag[0:canBech32]
+			switch prefix {
+			case config.GetBech32AccountAddrPrefix():
+				split[i] = "{acc_address}"
+				continue
+			case config.GetBech32AccountPubPrefix():
+				split[i] = "{acc_pub_address}"
+				continue
+			case config.GetBech32ConsensusAddrPrefix():
+				split[i] = "{cons_address}"
+				continue
+			case config.GetBech32ConsensusPubPrefix():
+				split[i] = "{cons_pub_address}"
+				continue
+			case config.GetBech32ValidatorAddrPrefix():
+				split[i] = "{val_address}"
+				continue
+			case config.GetBech32ValidatorPubPrefix():
+				split[i] = "{val_pub_address}"
+				continue
+			}
+		}
+
+		if _, err := strconv.ParseInt(frag,10,64); err == nil {
+			split[i] = "{int_maybe_id}"
+			continue
+		}
+
+		if len(frag) > 40 {
+			// A general word can be treated as hex as long as there are only characters within the hex range.
+			// In general, in the case of hex, there is a high probability that it is a hash value.
+			// Therefore, it is expected that only values over 20 bytes will come (probably 32 bytes).
+			if _, err := hex.DecodeString(frag); err == nil {
+				split[i] = "{hex_maybe_hash}"
+				continue
+			}
+		}
+	}
+
+	return strings.Join(split, "/")
+}
 
 const ZScoreP90 = 1.29
 const ZScoreP95 = 1.645
