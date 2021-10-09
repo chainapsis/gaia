@@ -2,7 +2,6 @@ package gaia
 
 import (
 	"encoding/json"
-	"strings"
 	"time"
 
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -32,18 +31,11 @@ func (app *GaiaApp) Query(req abci.RequestQuery) (res abci.ResponseQuery) {
 		}
 	}
 
-	path := req.Path
-
-	// Custom request is hard to measure because it has the parameter datas in the path.
-	if strings.HasPrefix(req.Path, "custom") || strings.HasPrefix(req.Path, "/custom") {
-		path = GuessParametersFromPath(req.Path)
-	}
-
 	start := time.Now()
 	res = app.BaseApp.Query(req)
 	elapsed := time.Since(start)
 
-	app.SimpleMetrics.Measure(path, elapsed)
+	app.SimpleMetrics.Measure(req.Path, elapsed)
 
 	return res
 }
