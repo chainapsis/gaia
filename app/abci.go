@@ -1,7 +1,10 @@
 package gaia
 
 import (
+	"encoding/hex"
 	"encoding/json"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/patrickmn/go-cache"
 	"time"
 
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -31,11 +34,36 @@ func (app *GaiaApp) Query(req abci.RequestQuery) (res abci.ResponseQuery) {
 		}
 	}
 
+	if req.Path == "custom/gov/tally" || req.Path == "/custom/gov/tally" {
+		bz, err := sdk.SortJSON(req.Data)
+		if err == nil {
+			key := hex.EncodeToString(bz)
+			cached, found := queryGovTallyCache.Get(key)
+			if cached != nil && found {
+				res, ok := cached.(abci.ResponseQuery)
+				if ok {
+					// Check the count of the cached response
+					app.SimpleMetrics.Measure("custom/gov/tally+cached", 0)
+
+					return res
+				}
+			}
+		}
+	}
+
 	start := time.Now()
 	res = app.BaseApp.Query(req)
 	elapsed := time.Since(start)
 
 	app.SimpleMetrics.Measure(req.Path, elapsed)
+
+	if req.Path == "custom/gov/tally" || req.Path == "/custom/gov/tally" {
+		bz, err := sdk.SortJSON(req.Data)
+		if err == nil {
+			key := hex.EncodeToString(bz)
+			queryGovTallyCache.Set(key, res, cache.DefaultExpiration)
+		}
+	}
 
 	return res
 }
