@@ -19,6 +19,20 @@ func (app *GaiaApp) Query(req abci.RequestQuery) (res abci.ResponseQuery) {
 		}
 	}
 
+	if req.Path == "custom/gov/tally" || req.Path == "/custom/gov/tally" {
+		bz, err := sdk.SortJSON(req.Data)
+		if err == nil {
+			key := hex.EncodeToString(bz)
+			cached, found := queryGovTallyCache.Get(key)
+			if cached != nil && found {
+				res, ok := cached.(abci.ResponseQuery)
+				if ok {
+					return res
+				}
+			}
+		}
+	}
+
 	res = app.BaseApp.Query(req)
 
 	if req.Path == "custom/gov/tally" || req.Path == "/custom/gov/tally" {
