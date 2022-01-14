@@ -201,6 +201,8 @@ type GaiaApp struct { // nolint: golint
 	LiquidityKeeper  liquiditykeeper.Keeper
 	RouterKeeper     routerkeeper.Keeper
 
+	SimpleMetrics *SimpleMetrics
+
 	// make scoped keepers public for test purposes
 	ScopedIBCKeeper      capabilitykeeper.ScopedKeeper
 	ScopedTransferKeeper capabilitykeeper.ScopedKeeper
@@ -264,6 +266,8 @@ func NewGaiaApp(
 		tkeys:             tkeys,
 		memKeys:           memKeys,
 	}
+
+	app.SimpleMetrics = NewSimpleMetrics()
 
 	app.ParamsKeeper = initParamsKeeper(
 		appCodec,
